@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "842188735982",
+    "project_id": "nero-33ee3",
+    "storage_bucket": "nero-33ee3.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:842188735982:android:eb7746fee650baa684faff",
+        "android_client_info": {
+          "package_name": "com.example.neroapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwPz9hPTJRdH5zIQBnneQEBrEmnFbVh1k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

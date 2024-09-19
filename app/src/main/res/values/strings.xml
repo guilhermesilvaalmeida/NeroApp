@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name" translatable="false">NeroApp</string>
+    <string name="welcome_message">Bem vindo ao Nero</string>
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Senha</string>
+    <string name="sign_in">Sign In</string>
+</resources>

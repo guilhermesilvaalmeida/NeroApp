@@ -20,35 +20,36 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.Modifier
 
-data class OrdemServico(
+// Definição da classe OrdemServico
+data class OrdemServicoEmpresa(
     val codigo: String,
     val titulo: String,
     val data: String,
     val horario: String,
-    var status: String
+    var status: String // Alterado para var para permitir atualizações
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OrderListScreen(navController: NavController) {
+fun ServiceOrderListScreen(navController: NavController) {
     // Cor principal: Roxo
     val primaryColor = Color(0xFF6200EE)
     val backgroundColor = Color.White
 
     // Lista de ordens de serviço simuladas
-    val ordensServico = listOf(
+    val ordensServico = remember { mutableStateListOf(
         OrdemServico("001", "Desenvolvimento de App", "20/09/2024", "14:00", "Aberto"),
         OrdemServico("002", "Manutenção de Sistema", "21/09/2024", "10:00", "Fechado"),
         OrdemServico("003", "Criação de Landing Page", "22/09/2024", "09:30", "Aberto"),
         OrdemServico("004", "Suporte Técnico", "23/09/2024", "11:15", "Fechado")
-    )
+    ) }
 
     var searchQuery by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Ordens de Serviço", color = Color.White) },
+                title = { Text("Ordens de Serviço - Empresa", color = Color.White) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = primaryColor)
             )
         },
@@ -100,45 +101,7 @@ fun OrderListScreen(navController: NavController) {
                     val ordem = ordensServico[index]
 
                     if (ordem.titulo.contains(searchQuery, ignoreCase = true)) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp)
-                                .clickable { navController.navigate("orderDetails/${ordem.codigo}") },
-                            border = BorderStroke(2.dp, primaryColor) // Borda roxa
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp)
-                            ) {
-                                Text(
-                                    text = "Ticket: ${ordem.codigo}",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp
-                                )
-                                Text(
-                                    text = ordem.titulo,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp
-                                )
-                                Text(text = "Data: ${ordem.data}")
-                                Text(text = "Horário: ${ordem.horario}")
-
-                                // Status com campo ao redor
-                                Box(
-                                    modifier = Modifier
-                                        .padding(top = 8.dp)
-                                        .border(BorderStroke(1.dp, primaryColor), shape = RoundedCornerShape(4.dp))
-                                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                                    contentAlignment = Alignment.CenterEnd
-                                ) {
-                                    Text(
-                                        text = "Status: ${ordem.status}",
-                                        color = primaryColor,
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                }
-                            }
-                        }
+                        QuoteItem(ordem)
                     }
                 }
             }
@@ -154,9 +117,82 @@ fun OrderListScreen(navController: NavController) {
     }
 }
 
+@Composable
+fun QuoteItem(ordem: OrdemServico) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .clickable { /* Navegar para detalhes ou outra ação */ },
+        border = BorderStroke(2.dp, Color(0xFF6200EE)), // Borda roxa
+        colors = CardDefaults.cardColors(containerColor = Color.LightGray.copy(alpha = 0.1f))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "Ticket: ${ordem.codigo}",
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp
+            )
+            Text(
+                text = ordem.titulo,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp
+            )
+            Text(text = "Data: ${ordem.data}")
+            Text(text = "Horário: ${ordem.horario}")
+
+            // Status com campo ao redor
+            Box(
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .border(BorderStroke(1.dp, Color(0xFF6200EE)), shape = RoundedCornerShape(4.dp))
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Text(
+                    text = "Status: ${ordem.status}",
+                    color = Color(0xFF6200EE),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            // Botões de ação
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = {
+                        // Lógica para entregar o projeto
+                        ordem.status = "Entregue"
+                    },
+                    modifier = Modifier.weight(1f).padding(end = 8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE)) // Cor padronizada
+                ) {
+                    Text("Entregar", color = Color.White) // Texto branco para contraste
+                }
+
+                Button(
+                    onClick = {
+                        // Lógica para cancelar o projeto
+                        ordem.status = "Cancelado"
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE)) // Cor padronizada
+                ) {
+                    Text("Cancelar", color = Color.White) // Texto branco para contraste
+                }
+            }
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
-fun PreviewOrderListScreen() {
+fun PreviewServiceOrderListScreen() {
     val fakeNavController = rememberNavController()
-    OrderListScreen(navController = fakeNavController)
+    ServiceOrderListScreen(navController = fakeNavController)
 }

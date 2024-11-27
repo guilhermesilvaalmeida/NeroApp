@@ -19,9 +19,16 @@ data class Service(var title: String, var description: String)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun VisualizarServicosScreen(navController: NavController, services: List<Service>) {
+fun VisualizarServicosScreen(navController: NavController) {
     var showDialog by remember { mutableStateOf(false) }
     var selectedService by remember { mutableStateOf<Service?>(null) }
+
+    // Defina a lista de serviços diretamente aqui
+    val services = listOf(
+        Service("Desenvolvimento Mobile Aprovado", "A partir de R$ 2.000"),
+        Service("Desenvolvimento Web Pendente", "A partir de R$ 1.500"),
+        Service("Desenvolvimento de Software Aprovado", "A partir de R$ 5.000")
+    )
 
     Scaffold(
         topBar = {
@@ -147,12 +154,5 @@ fun EditServiceDialog(service: Service, onDismiss: () -> Unit, onUpdate: (Servic
 @Composable
 fun PreviewVisualizarServicosScreen() {
     val fakeNavController = rememberNavController()
-
-    val sampleServices = listOf(
-        Service("Desenvolvimento Mobile Aprovado", "A partir de R$ 2.000"),
-        Service("Desenvolvimento Web Pendente", "A partir de R$ 1.500"),
-        Service("Desenvolvimento de Software Aprovado", "A partir de R$ 5.000")
-    )
-
-    VisualizarServicosScreen(navController = fakeNavController, services = sampleServices)
+    VisualizarServicosScreen(navController = fakeNavController)
 }

@@ -14,12 +14,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -59,7 +57,7 @@ fun SignInScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val image: Painter = painterResource(id = R.drawable.nero)
+            val image = painterResource(id = R.drawable.nero)
             Image(painter = image, contentDescription = null, modifier = Modifier.size(200.dp))
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -68,8 +66,7 @@ fun SignInScreen(
                 text = "Bem-vindo de volta!",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = primaryColor,
-                textAlign = TextAlign.Center
+                color = primaryColor
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -84,9 +81,7 @@ fun SignInScreen(
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = primaryColor,
                     cursorColor = primaryColor,
-                    unfocusedIndicatorColor = Color.Gray,
-                    focusedLabelColor = primaryColor,
-                    unfocusedLabelColor = Color.Gray
+                    unfocusedIndicatorColor = Color.Gray
                 ),
                 shape = RoundedCornerShape(8.dp)
             )
@@ -104,9 +99,7 @@ fun SignInScreen(
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = primaryColor,
                     cursorColor = primaryColor,
-                    unfocusedIndicatorColor = Color.Gray,
-                    focusedLabelColor = primaryColor,
-                    unfocusedLabelColor = Color.Gray
+                    unfocusedIndicatorColor = Color.Gray
                 ),
                 shape = RoundedCornerShape(8.dp),
                 trailingIcon = {
@@ -134,13 +127,13 @@ fun SignInScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Botão de login
             Button(
                 onClick = {
                     auth.signInWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
-                                // Navegar para o "clientMenu" após login
-                                navController.navigate("clientMenu")
+                                onNavigateToClientHome()
                             } else {
                                 errorMessage = task.exception?.message ?: "Erro ao fazer login"
                             }
@@ -155,22 +148,24 @@ fun SignInScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Mensagem de erro
             errorMessage?.let {
                 Text(it, color = MaterialTheme.colorScheme.error)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Botão de "Esqueci minha senha"
             TextButton(onClick = { navController.navigate("recoverPassword") }) {
                 Text("Esqueci minha senha", color = primaryColor)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            TextButton(onClick = onNavigateToSignUp) {
-                Text("Ainda não tem uma conta? Cadastre-se", color = primaryColor)
+            // Botão de "Cadastrar-se"
+            TextButton(onClick = { onNavigateToSignUp() }) {
+                Text("Não tem uma conta? Cadastre-se", color = primaryColor)
             }
         }
     }
 }
-

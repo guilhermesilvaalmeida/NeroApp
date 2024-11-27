@@ -111,20 +111,6 @@ fun SignInScreen(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Checkbox para lembrar da senha
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Checkbox(
-                    checked = rememberMe,
-                    onCheckedChange = { rememberMe = it },
-                    colors = CheckboxDefaults.colors(checkedColor = primaryColor)
-                )
-                Text(text = "Lembrar de mim", modifier = Modifier.padding(start = 8.dp))
-            }
-
             Spacer(modifier = Modifier.height(16.dp))
 
             // Botão de login

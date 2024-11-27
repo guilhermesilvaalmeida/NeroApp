@@ -94,11 +94,14 @@ class MainActivity : ComponentActivity() {
                 composable("registerService") {
                     RegisterServiceScreen(navController = navController)
                 }
-                composable("visualizarServicos") {
-                    VisualizarServicosScreen(navController = navController)
-                }
+//                composable("visualizarServicos") {
+//                    VisualizarServicosScreen(navController = navController)
+//                }
                 composable("orcamentos") {
                     SentQuotesScreen(navController = navController)
+                }
+                composable("clientManagement") {
+                    ClientManagementScreen(navController = navController)
                 }
             }
         }

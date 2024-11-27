@@ -4,7 +4,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Visibility
@@ -60,11 +62,15 @@ fun CompanyMenuScreen(navController: NavController, companyName: String) {
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 CompanyMenuOption("Clientes", "Gerencie seus clientes.", Icons.Filled.People) {
-                    // Navegar para a tela de clientes
+                    navController.navigate("clientManagement")
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 CompanyMenuOption("Visualizar Pedidos de Orçamentos", "Veja todos os pedidos de orçamentos recebidos.", Icons.Filled.RequestQuote) {
                     navController.navigate("orcamentos")
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                CompanyMenuOption("Sair", "Sair da Sessão", Icons.Filled.ArrowBack) {
+                    navController.navigate("signIn")
                 }
             }
 

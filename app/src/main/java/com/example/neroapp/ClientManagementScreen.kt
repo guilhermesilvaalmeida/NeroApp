@@ -2,9 +2,9 @@ package com.example.neroapp
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,6 +19,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.Modifier
+import com.google.firebase.firestore.FirebaseFirestore
+import androidx.compose.runtime.mutableStateListOf
 
 // Definição da classe Cliente
 data class Cliente(
@@ -28,22 +30,57 @@ data class Cliente(
     val telefone: String
 )
 
+fun fetchClientes(clientesList: MutableList<Cliente>) {
+    val db = FirebaseFirestore.getInstance() // Instância do Firestore
+
+    db.collection("clientes")
+        .get()
+        .addOnSuccessListener { result ->
+            println("Dados recebidos: ${result.documents.size} documentos.")
+            clientesList.clear() // Limpa a lista antes de adicionar novos itens
+            for (document in result) {
+                val cliente = Cliente(
+                    id = document.id,
+                    nome = document.getString("nome") ?: "",
+                    email = document.getString("email") ?: "",
+                    telefone = document.getString("telefone") ?: ""
+                )
+                clientesList.add(cliente)
+            }
+        }
+        .addOnFailureListener { e ->
+            println("Erro ao buscar dados: $e")
+        }
+}
+
+fun deleteCliente(cliente: Cliente, clientesList: MutableList<Cliente>) {
+    val db = FirebaseFirestore.getInstance()
+    db.collection("clientes")
+        .document(cliente.id)
+        .delete()
+        .addOnSuccessListener {
+            println("Cliente ${cliente.nome} excluído com sucesso")
+            fetchClientes(clientesList)
+        }
+        .addOnFailureListener { e ->
+            println("Erro ao excluir cliente: $e")
+        }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientManagementScreen(navController: NavController) {
-    // Cor principal: Roxo
     val primaryColor = Color(0xFF6200EE)
     val backgroundColor = Color.White
 
-    // Lista de clientes simulados
-    val clientes = remember { mutableStateListOf(
-        Cliente("001", "João Silva", "joao@gmail.com", "(11) 91234-5678"),
-        Cliente("002", "Maria Souza", "maria@gmail.com", "(11) 98765-4321"),
-        Cliente("003", "Carlos Lima", "carlos@gmail.com", "(11) 91234-1234"),
-        Cliente("004", "Ana Pereira", "ana@gmail.com", "(11) 98765-5678")
-    ) }
-
+    // Lista de clientes que será preenchida
+    val clientes = remember { mutableStateListOf<Cliente>() }
     var searchQuery by remember { mutableStateOf("") }
+
+    // Carregar os dados do Firestore ao iniciar a tela
+    LaunchedEffect(Unit) {
+        fetchClientes(clientes)
+    }
 
     Scaffold(
         topBar = {
@@ -96,11 +133,12 @@ fun ClientManagementScreen(navController: NavController) {
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                items(clientes.size) { index ->
-                    val cliente = clientes[index]
-
+                items(clientes) { cliente ->
                     if (cliente.nome.contains(searchQuery, ignoreCase = true)) {
-                        ClientItem(cliente)
+                        ClientItem(
+                            cliente,
+                            onDelete = { deleteCliente(it, clientes) }
+                        )
                     }
                 }
             }
@@ -117,12 +155,11 @@ fun ClientManagementScreen(navController: NavController) {
 }
 
 @Composable
-fun ClientItem(cliente: Cliente) {
+fun ClientItem(cliente: Cliente, onDelete: (Cliente) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
-            .clickable { /* Navegar para detalhes ou editar */ },
+            .padding(8.dp),
         border = BorderStroke(2.dp, Color(0xFF6200EE)),
         colors = CardDefaults.cardColors(containerColor = Color.LightGray.copy(alpha = 0.1f))
     ) {
@@ -142,31 +179,15 @@ fun ClientItem(cliente: Cliente) {
             Text(text = "Email: ${cliente.email}")
             Text(text = "Telefone: ${cliente.telefone}")
 
-            // Botões de ação
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // Botão de exclusão
+            Button(
+                onClick = { onDelete(cliente) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
             ) {
-                Button(
-                    onClick = {
-                        // Lógica para editar cliente
-                    },
-                    modifier = Modifier.weight(1f).padding(end = 8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
-                ) {
-                    Text("Editar", color = Color.White)
-                }
-
-                Button(
-                    onClick = {
-                        // Lógica para excluir cliente
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
-                ) {
-                    Text("Excluir", color = Color.White)
-                }
+                Text("Excluir", color = Color.White)
             }
         }
     }

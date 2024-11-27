@@ -19,6 +19,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import kotlinx.coroutines.tasks.await
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,7 +28,7 @@ fun BudgetStatusScreen(navController: NavController) {
     val db = FirebaseFirestore.getInstance()
     val currentUser = FirebaseAuth.getInstance().currentUser
     val userId = currentUser?.uid
-
+println(userId)
     var approvedBudgets by remember { mutableStateOf<List<Budget>>(emptyList()) }
     var unapprovedBudgets by remember { mutableStateOf<List<Budget>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
@@ -36,14 +38,15 @@ fun BudgetStatusScreen(navController: NavController) {
     LaunchedEffect(userId) {
         if (userId != null) {
             try {
-                // Consultar orçamentos no Firestore filtrados pelo userId
+                // Query budgets in Firestore filtered by userId
                 val result: QuerySnapshot = db.collection("orcamentos")
+                    .whereEqualTo("userId", userId)
                     .get()
                     .await()
 
-                // Filtra os orçamentos aprovados e não aprovados
+                // Map documents to Budget objects and filter approved/unapproved
                 val budgets = result.documents.mapNotNull { document ->
-                    document.toBudget() // Mapeia o snapshot para um objeto Budget
+                    document.toBudget()
                 }
                 approvedBudgets = budgets.filter { it.isApproved }
                 unapprovedBudgets = budgets.filter { !it.isApproved }
@@ -127,12 +130,16 @@ fun BudgetCard(budget: Budget, isApproved: Boolean = true, onClick: () -> Unit =
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            Text(budget.name, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold))
+            Text(budget.serviceName, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold))
             Text(
                 if (isApproved) "Aprovado" else "Não Aprovado",
                 color = if (isApproved) Color(0xFF4CAF50) else Color.Red,
                 fontWeight = FontWeight.Bold
             )
+            Text("Cliente: ${budget.clientName}", style = MaterialTheme.typography.bodyMedium)
+            Text("Mensagem: ${budget.customerMessage}", style = MaterialTheme.typography.bodyMedium)
+            Text("Data: ${budget.date}", style = MaterialTheme.typography.bodySmall)
+
             if (isApproved) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("Clique para contratar serviço", color = Color(0xFF6200EE), fontWeight = FontWeight.Bold)
@@ -141,64 +148,26 @@ fun BudgetCard(budget: Budget, isApproved: Boolean = true, onClick: () -> Unit =
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ServiceContractDialog(
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-    budget: Budget?,
-    description: String,
-    onDescriptionChange: (String) -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Contratar Serviço: ${budget?.name}") },
-        text = {
-            Column {
-                Text("Descreva o que você precisa:", fontWeight = FontWeight.Bold)
-                TextField(
-                    value = description,
-                    onValueChange = onDescriptionChange,
-                    placeholder = { Text("Descrição do projeto") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        cursorColor = Color(0xFF6200EE),
-                        focusedIndicatorColor = Color(0xFF6200EE),
-                        unfocusedIndicatorColor = Color.Gray,
-                        focusedPlaceholderColor = Color.Gray,
-                        unfocusedPlaceholderColor = Color.Gray
-                    )
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onConfirm()
-                },
-                enabled = description.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
-            ) {
-                Text("Contratar Serviço", color = Color.White)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar", color = Color(0xFF6200EE))
-            }
-        }
-    )
-}
-
-data class Budget(val name: String, val isApproved: Boolean)
+data class Budget(
+    val serviceName: String,
+    val clientName: String,
+    val customerMessage: String,
+    val date: String,
+    val userId: String,
+    val isApproved: Boolean
+)
 
 fun com.google.firebase.firestore.DocumentSnapshot.toBudget(): Budget? {
     return try {
         Budget(
-            name = getString("name") ?: "Sem Nome",
-            isApproved = getBoolean("isApproved") ?: false
+            serviceName = getString("serviceName") ?: "Sem Nome",
+            clientName = getString("clientName") ?: "Não identificado",
+            customerMessage = getString("customerMessage") ?: "",
+            date = getLong("timestamp")?.let {
+                SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(it))
+            } ?: "Data não identificada",
+            userId = getString("userId") ?: "",
+            isApproved = getBoolean("aprovado") ?: false
         )
     } catch (e: Exception) {
         Log.e("Firestore", "Erro ao mapear o documento: ${e.localizedMessage}")

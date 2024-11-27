@@ -1,5 +1,6 @@
 package com.example.neroapp
 
+import android.util.Log
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,8 +19,8 @@ import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
-import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,21 +28,18 @@ fun SentQuotesScreen(navController: NavController) {
     val primaryColor = Color(0xFF6200EE)
     val backgroundColor = Color.White
 
-    // Estado para armazenar os orçamentos recuperados do Firestore
     var quotes by remember { mutableStateOf<List<Quote>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Obter a instância do Firestore e o ID do usuário logado
     val db = FirebaseFirestore.getInstance()
     val currentUser = FirebaseAuth.getInstance().currentUser
 
-    // Buscar orçamentos do Firestore
     LaunchedEffect(Unit) {
         if (currentUser != null) {
             try {
                 val result: QuerySnapshot = db.collection("orcamentos")
-                    .whereEqualTo("userId", currentUser.uid) // Filtrar pelo ID do usuário
+                    .whereEqualTo("empresaId", currentUser.uid)
                     .get()
                     .await()
 
@@ -85,35 +83,10 @@ fun SentQuotesScreen(navController: NavController) {
             )
 
             when {
-                loading -> {
-                    // Mostrar indicador de carregamento
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-                }
-
-                errorMessage != null -> {
-                    // Mostrar mensagem de erro
-                    Text(
-                        text = errorMessage!!,
-                        color = Color.Red,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-
-                quotes.isEmpty() -> {
-                    // Mostrar mensagem de lista vazia
-                    Text(
-                        text = "Nenhum orçamento encontrado.",
-                        color = Color.Gray,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-
-                else -> {
-                    // Exibir lista de orçamentos
-                    quotes.forEach { quote ->
-                        QuoteItem(quote = quote, db = db) // Passa o db para aprovação
-                    }
-                }
+                loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                errorMessage != null -> Text(text = errorMessage!!, color = Color.Red, style = MaterialTheme.typography.bodyLarge)
+                quotes.isEmpty() -> Text(text = "Nenhum orçamento encontrado.", color = Color.Gray, style = MaterialTheme.typography.bodyLarge)
+                else -> quotes.forEach { quote -> QuoteItem(quote = quote, db = db) }
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -140,12 +113,10 @@ fun QuoteItem(quote: Quote, db: FirebaseFirestore) {
             .border(2.dp, Color(0xFF6200EE), RoundedCornerShape(8.dp)),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(text = "Serviço: ${quote.serviceName}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Text(text = "Cliente: ${quote.clientName}", fontSize = 16.sp)
-            Text(text = "Mensagem do Cliente: ${quote.customerMessage}", fontSize = 16.sp) // Exibe a mensagem do cliente
+            Text(text = "Mensagem do Cliente: ${quote.customerMessage}", fontSize = 16.sp)
             Text(text = "Data: ${quote.date}", fontSize = 14.sp)
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -206,18 +177,15 @@ fun QuoteItem(quote: Quote, db: FirebaseFirestore) {
 }
 
 fun approveQuote(quote: Quote, db: FirebaseFirestore) {
-    val quoteRef = db.collection("orcamentos").document(quote.documentId) // Usar documentId para identificar o orçamento específico
+    val quoteRef = db.collection("orcamentos").document(quote.documentId)
 
-    // Atualiza ou cria o campo "aprovado" no Firestore com o valor "true"
-    quoteRef.set(mapOf(
+    quoteRef.update(mapOf(
         "aprovado" to true
-    ), SetOptions.merge()) // Use SetOptions.merge() para não sobrescrever outros campos existentes
+    ))
         .addOnSuccessListener {
-            // Sucesso ao criar ou atualizar o campo "aprovado"
             println("Orçamento aprovado com sucesso")
         }
         .addOnFailureListener { e ->
-            // Caso ocorra algum erro
             println("Erro ao aprovar orçamento: ${e.message}")
         }
 }
@@ -225,23 +193,26 @@ fun approveQuote(quote: Quote, db: FirebaseFirestore) {
 data class Quote(
     val serviceName: String,
     val clientName: String,
-    val customerMessage: String, // Usando o campo de mensagem do cliente
+    val customerMessage: String,
     val date: String,
-    val userId: String, // userId do usuário que fez o orçamento
-    val documentId: String // ID do documento no Firestore
+    val userId: String,
+    val documentId: String
 )
 
 fun com.google.firebase.firestore.DocumentSnapshot.toQuote(): Quote? {
     return try {
         Quote(
-            serviceName = getString("serviceName") ?: "",
+            serviceName = getString("serviceName") ?: "Sem Nome",
             clientName = getString("clientName") ?: "Não identificado",
-            customerMessage = getString("customerMessage") ?: "", // Captura o campo customerMessage
-            date = getString("date") ?: "Não identificado",
+            customerMessage = getString("customerMessage") ?: "",
+            date = getLong("timestamp")?.let {
+                java.text.SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(it))
+            } ?: "Não identificado",
             userId = getString("userId") ?: "",
-            documentId = id // Usando o id do documento como identificador
+            documentId = id
         )
     } catch (e: Exception) {
+        Log.e("Firestore", "Erro ao mapear o documento: ${e.localizedMessage}")
         null
     }
 }

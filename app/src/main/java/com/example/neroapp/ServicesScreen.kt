@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -21,6 +22,7 @@ fun ServicesScreen(navController: NavController) {
     var selectedService by remember { mutableStateOf<ServiceItemModel?>(null) }
     var showSnackbar by remember { mutableStateOf(false) }
     var snackbarMessage by remember { mutableStateOf("") }
+    val currentUser = FirebaseAuth.getInstance().currentUser
 
     LaunchedEffect(Unit) {
         services = fetchServices()
@@ -64,10 +66,12 @@ fun ServicesScreen(navController: NavController) {
         }
     }
 
-    if (showDialog && selectedService != null) {
+    if (showDialog && selectedService != null && currentUser != null) {
         RequestQuoteDialog(
             serviceName = selectedService!!.name,
-            userId = selectedService!!.userId,
+            empresaId = selectedService!!.userId, // Using userId from servicos as empresaId
+            userId = currentUser.uid,
+            userName = currentUser.displayName ?: "Usuário",
             onDismiss = { showDialog = false },
             onQuoteSent = { message ->
                 snackbarMessage = message
@@ -100,7 +104,9 @@ fun ServiceItem(serviceName: String, description: String, price: Int, onRequestQ
 @Composable
 fun RequestQuoteDialog(
     serviceName: String,
+    empresaId: String,
     userId: String,
+    userName: String,
     onDismiss: () -> Unit,
     onQuoteSent: (String) -> Unit
 ) {
@@ -120,7 +126,7 @@ fun RequestQuoteDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    sendQuoteRequest(serviceName, customerMessage, userId) {
+                    sendQuoteRequest(serviceName, customerMessage, empresaId, userId, userName) {
                         onQuoteSent("Orçamento enviado com sucesso!")
                     }
                 },
@@ -140,14 +146,18 @@ fun RequestQuoteDialog(
 fun sendQuoteRequest(
     serviceName: String,
     customerMessage: String,
+    empresaId: String,
     userId: String,
+    userName: String,
     onQuoteSent: () -> Unit
 ) {
     val db = FirebaseFirestore.getInstance()
     val request = hashMapOf(
         "serviceName" to serviceName,
-        "message" to customerMessage,
+        "customerMessage" to customerMessage,
+        "empresaId" to empresaId, // Setting empresaId in the request
         "userId" to userId,
+        "userName" to userName,
         "timestamp" to System.currentTimeMillis()
     )
     db.collection("orcamentos").add(request)

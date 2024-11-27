@@ -7,6 +7,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,11 +18,11 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -28,14 +30,14 @@ import com.google.firebase.auth.FirebaseAuth
 fun SignInScreen(
     auth: FirebaseAuth,
     onNavigateToSignUp: () -> Unit,
-    onNavigateToClientHome: () -> Unit,
-    onNavigateToCompanyHome: () -> Unit
+    onNavigateToClientHome: () -> Unit, // Mantido apenas a navegação para cliente
+    navController: NavController
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var userType by remember { mutableStateOf("") }
     var rememberMe by remember { mutableStateOf(false) }
+    var isPasswordVisible by remember { mutableStateOf(false) }
 
     val primaryColor = Color(0xFF6200EE)
     val backgroundColor = Color.White
@@ -49,7 +51,6 @@ fun SignInScreen(
         },
         containerColor = backgroundColor
     ) { paddingValues ->
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -73,31 +74,6 @@ fun SignInScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(text = "Fazer login como:", fontSize = 16.sp, color = primaryColor)
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround
-            ) {
-                Button(
-                    onClick = { userType = "Cliente" },
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
-                ) {
-                    Text("Cliente", color = Color.White)
-                }
-
-                Button(
-                    onClick = { userType = "Empresa" },
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
-                ) {
-                    Text("Empresa", color = Color.White)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             // Campo de email
             TextField(
                 value = email,
@@ -117,13 +93,13 @@ fun SignInScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Campo de senha
+            // Campo de senha com ícone para visualizar
             TextField(
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Senha") },
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = primaryColor,
@@ -132,7 +108,13 @@ fun SignInScreen(
                     focusedLabelColor = primaryColor,
                     unfocusedLabelColor = Color.Gray
                 ),
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(8.dp),
+                trailingIcon = {
+                    IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                        val icon = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                        Icon(icon, contentDescription = "Toggle password visibility")
+                    }
+                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -157,11 +139,8 @@ fun SignInScreen(
                     auth.signInWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
-                                if (userType == "Cliente") {
-                                    onNavigateToClientHome()
-                                } else {
-                                    onNavigateToCompanyHome()
-                                }
+                                // Navegar para o "clientMenu" após login
+                                navController.navigate("clientMenu")
                             } else {
                                 errorMessage = task.exception?.message ?: "Erro ao fazer login"
                             }
@@ -182,8 +161,7 @@ fun SignInScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Texto de "Esqueci minha senha"
-            TextButton(onClick = { /* Lógica para recuperação de senha */ }) {
+            TextButton(onClick = { navController.navigate("recoverPassword") }) {
                 Text("Esqueci minha senha", color = primaryColor)
             }
 
@@ -195,3 +173,4 @@ fun SignInScreen(
         }
     }
 }
+

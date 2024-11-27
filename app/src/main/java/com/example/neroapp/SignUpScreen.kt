@@ -7,22 +7,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var cpf by remember { mutableStateOf("") }  // Novo campo para CPF
-    var birthDate by remember { mutableStateOf("") }  // Novo campo para Data de Nascimento
+    var name by remember { mutableStateOf("") }
+    var birthDate by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    val coroutineScope = rememberCoroutineScope()
+    var isCompany by remember { mutableStateOf(false) }  // Estado para determinar o tipo de cadastro
 
-    // Definindo cores
+    val coroutineScope = rememberCoroutineScope()
+    val db = FirebaseFirestore.getInstance()
+
     val primaryColor = Color(0xFF6200EE)
     val backgroundColor = Color.White
 
@@ -51,6 +55,23 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
             )
 
             Spacer(modifier = Modifier.height(24.dp))
+
+            // Campo para Nome
+            TextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Nome") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = primaryColor,
+                    cursorColor = primaryColor,
+                    unfocusedIndicatorColor = Color.Gray,
+                    focusedLabelColor = primaryColor,
+                    unfocusedLabelColor = Color.Gray
+                )
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Campo para Email
             TextField(
@@ -87,24 +108,7 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Novo campo para CPF
-            TextField(
-                value = cpf,
-                onValueChange = { cpf = it },
-                label = { Text("CPF") },
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = primaryColor,
-                    cursorColor = primaryColor,
-                    unfocusedIndicatorColor = Color.Gray,
-                    focusedLabelColor = primaryColor,
-                    unfocusedLabelColor = Color.Gray
-                )
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Novo campo para Data de Nascimento
+            // Campo para Data de Nascimento
             TextField(
                 value = birthDate,
                 onValueChange = { birthDate = it },
@@ -119,17 +123,79 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
                 )
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Campo para Telefone
+            TextField(
+                value = phone,
+                onValueChange = { phone = it },
+                label = { Text("Telefone") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = primaryColor,
+                    cursorColor = primaryColor,
+                    unfocusedIndicatorColor = Color.Gray,
+                    focusedLabelColor = primaryColor,
+                    unfocusedLabelColor = Color.Gray
+                )
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Escolha entre Cliente ou Empresa
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(
+                    selected = !isCompany,
+                    onClick = { isCompany = false }
+                )
+                Text("Cliente", modifier = Modifier.padding(start = 8.dp))
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                RadioButton(
+                    selected = isCompany,
+                    onClick = { isCompany = true }
+                )
+                Text("Empresa", modifier = Modifier.padding(start = 8.dp))
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             // Botão para cadastrar
             Button(
                 onClick = {
                     coroutineScope.launch {
-                        val result = createUserWithEmailAndPasswordSuspend(auth, email, password)
-                        if (result == null) {
-                            onNavigateToSignIn()
-                        } else {
-                            errorMessage = result
+                        try {
+                            // Criação do usuário no Firebase Authentication
+                            val authResult = auth.createUserWithEmailAndPassword(email, password).await()
+
+                            // Adiciona os dados adicionais ao Firestore
+                            val user = authResult.user
+                            user?.let {
+                                val userData = hashMapOf(
+                                    "nome" to name,
+                                    "telefone" to phone,
+                                    "dataNascimento" to birthDate,
+                                    "email" to email
+                                )
+
+                                // Inserção dos dados na coleção adequada (clientes ou empresas)
+                                if (isCompany) {
+                                    db.collection("empresas").document(it.uid)
+                                        .set(userData)
+                                        .await()
+                                } else {
+                                    db.collection("clientes").document(it.uid)
+                                        .set(userData)
+                                        .await()
+                                }
+
+                                // Navegação para a tela de login ou página principal
+                                onNavigateToSignIn() // Navega para a tela de login
+                            }
+
+                        } catch (e: Exception) {
+                            errorMessage = "Erro ao cadastrar: ${e.message}"
                         }
                     }
                 },
@@ -145,6 +211,7 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
                 Text("Já tem uma conta? Faça login", color = primaryColor)
             }
 
+            // Exibe a mensagem de erro caso haja
             errorMessage?.let {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
@@ -154,18 +221,5 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
                 )
             }
         }
-    }
-}
-
-suspend fun createUserWithEmailAndPasswordSuspend(
-    auth: FirebaseAuth,
-    email: String,
-    password: String
-): String? {
-    return try {
-        auth.createUserWithEmailAndPassword(email, password).await()
-        null // Cadastro bem-sucedido
-    } catch (e: Exception) {
-        e.localizedMessage // Retorna mensagem de erro
     }
 }

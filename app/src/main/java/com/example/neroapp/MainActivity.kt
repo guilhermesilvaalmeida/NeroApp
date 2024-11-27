@@ -74,6 +74,16 @@ class MainActivity : ComponentActivity() {
                     val companyName = backStackEntry.arguments?.getString("companyName") ?: "Empresa"
                     CompanyMenuScreen(navController = navController, companyName = companyName)
                 }
+
+                // Navegação para a tela de ClientManagement (Minhas Ordens)
+                composable("clientManagement") {
+                    ClientManagementScreen(navController = navController)
+                }
+
+                // Navegação para a tela de Settings (Minha Conta)
+                composable("settings") {
+                    SettingsScreen(navController = navController)
+                }
             }
         }
     }

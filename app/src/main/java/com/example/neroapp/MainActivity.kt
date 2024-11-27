@@ -85,6 +85,9 @@ class MainActivity : ComponentActivity() {
                 composable("settings") {
                     SettingsScreen(navController = navController)
                 }
+                composable("budgetStatus") {
+                    BudgetStatusScreen(navController = navController)
+                }
             }
         }
     }

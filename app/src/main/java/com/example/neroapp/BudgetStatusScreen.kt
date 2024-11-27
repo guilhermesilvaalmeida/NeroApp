@@ -171,3 +171,4 @@ fun PreviewBudgetStatusScreen() {
     val fakeNavController = rememberNavController()
     BudgetStatusScreen(navController = fakeNavController)
 }
+

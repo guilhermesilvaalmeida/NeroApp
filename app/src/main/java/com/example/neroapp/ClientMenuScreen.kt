@@ -51,9 +51,10 @@ fun ClientMenuScreen(navController: NavController, clientName: String) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 MenuItem(text = "Minhas Ordens", icon = Icons.Default.List) {
-                    // Navegar para a tela de Minhas Ordens
-                    navController.navigate("clientManagement")
+                    // Navegar para a tela de Status dos Orçamentos (BudgetStatusScreen)
+                    navController.navigate("budgetStatus")
                 }
+
                 MenuItem(text = "Minha Conta", icon = Icons.Default.Build) {
                     // Navegar para a tela de configurações
                     navController.navigate("settings")

@@ -43,7 +43,7 @@ fun ClientMenuScreen(navController: NavController, clientName: String) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Bem-vindo, $clientName!", fontSize = 24.sp, color = primaryColor)
+            Text("Bem-vindo!", fontSize = 24.sp, color = primaryColor)
 
             Spacer(modifier = Modifier.height(32.dp))
 

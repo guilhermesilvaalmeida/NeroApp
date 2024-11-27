@@ -1,13 +1,12 @@
 package com.example.neroapp
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,6 +18,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import androidx.compose.material3.TextField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,6 +28,65 @@ fun SettingsScreen(navController: NavController) {
     // Cor principal: Roxo
     val primaryColor = Color(0xFF6200EE)
     val backgroundColor = Color.White
+    val context = navController.context
+    val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
+
+    // Estado para controlar o popup de alteração de nome
+    var showNameDialog by remember { mutableStateOf(false) }
+    var newName by remember { mutableStateOf("") }
+    var userCollection by remember { mutableStateOf("") } // Variável para armazenar a coleção do usuário
+
+    // Função para verificar em qual coleção o usuário está (clientes ou empresas)
+    fun getUserCollection(userId: String, onResult: (String) -> Unit) {
+        db.collection("clientes").document(userId).get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    onResult("clientes")
+                } else {
+                    // Se não for encontrado na coleção "clientes", verifica na coleção "empresas"
+                    db.collection("empresas").document(userId).get()
+                        .addOnSuccessListener { document ->
+                            if (document.exists()) {
+                                onResult("empresas")
+                            } else {
+                                onResult("") // Caso não seja encontrado em nenhuma coleção
+                            }
+                        }
+                        .addOnFailureListener {
+                            onResult("") // Caso ocorra algum erro
+                        }
+                }
+            }
+            .addOnFailureListener {
+                onResult("") // Caso ocorra algum erro
+            }
+    }
+
+    // Função para alterar o nome do usuário
+    fun updateUserName() {
+        val user = auth.currentUser
+        if (user != null) {
+            val userId = user.uid
+            // Chama a função para verificar a coleção do usuário
+            getUserCollection(userId) { collection ->
+                if (collection.isNotEmpty()) {
+                    // Alterar nome no Firestore
+                    db.collection(collection).document(userId)
+                        .update("nome", newName)
+                        .addOnSuccessListener {
+                            Toast.makeText(context, "Nome alterado com sucesso", Toast.LENGTH_SHORT).show()
+                            showNameDialog = false
+                        }
+                        .addOnFailureListener {
+                            Toast.makeText(context, "Erro ao alterar nome", Toast.LENGTH_SHORT).show()
+                        }
+                } else {
+                    Toast.makeText(context, "Usuário não encontrado em nenhuma coleção", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -53,12 +114,24 @@ fun SettingsScreen(navController: NavController) {
             )
 
             // Opções de configuração da conta
-            ConfigOptionItem(title = "Alterar Nome de Usuário", onClick = { /* Lógica de alteração */ })
-            ConfigOptionItem(title = "Alterar Senha", onClick = { /* Lógica de alteração */ })
-            ConfigOptionItem(title = "Excluir Conta", onClick = { /* Lógica de exclusão */ })
+            ConfigOptionItem(title = "Alterar Nome de Usuário", onClick = {
+                showNameDialog = true
+            })
+
+            // Removido o botão de Alterar Senha
+
+            ConfigOptionItem(title = "Excluir Conta", onClick = {
+                // Desconectar o usuário
+                auth.signOut()
+                FirebaseAuth.getInstance().signOut()
+                navController.navigate("signIn")
+                Toast.makeText(context, "Conta excluída", Toast.LENGTH_SHORT).show()
+
+            })
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Configurações de Notificações (Desativadas)
             Text(
                 text = "Configurações de Notificações",
                 style = MaterialTheme.typography.titleMedium,
@@ -68,12 +141,13 @@ fun SettingsScreen(navController: NavController) {
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Opções de configuração de notificações
-            ConfigOptionItem(title = "Notificações Push", onClick = { /* Ativar/Desativar push */ })
-            ConfigOptionItem(title = "Notificações por E-mail", onClick = { /* Ativar/Desativar e-mail */ })
+            // Botões desativados
+            ConfigOptionItem(title = "Notificações Push", onClick = {}, enabled = false)
+            ConfigOptionItem(title = "Notificações por E-mail", onClick = {}, enabled = false)
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Configurações de Tema (Desativado)
             Text(
                 text = "Configurações de Tema",
                 style = MaterialTheme.typography.titleMedium,
@@ -83,23 +157,8 @@ fun SettingsScreen(navController: NavController) {
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Exemplo de switch para mudar o tema (escuro/claro)
-            val isDarkMode = remember { mutableStateOf(false) }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { isDarkMode.value = !isDarkMode.value },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = if (isDarkMode.value) "Modo Escuro" else "Modo Claro",
-                    modifier = Modifier.weight(1f)
-                )
-                Switch(
-                    checked = isDarkMode.value,
-                    onCheckedChange = { isDarkMode.value = it }
-                )
-            }
+            // Botão de Modo Claro Desativado
+            ConfigOptionItem(title = "Modo Claro", onClick = {}, enabled = false)
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -111,16 +170,46 @@ fun SettingsScreen(navController: NavController) {
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         }
+
+        // Popup para alterar nome de usuário
+        if (showNameDialog) {
+            AlertDialog(
+                onDismissRequest = { showNameDialog = false },
+                title = { Text("Alterar Nome de Usuário") },
+                text = {
+                    Column {
+                        TextField(
+                            value = newName,
+                            onValueChange = { newName = it },
+                            label = { Text("Novo Nome") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        updateUserName()
+                    }) {
+                        Text("Confirmar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showNameDialog = false }) {
+                        Text("Cancelar")
+                    }
+                }
+            )
+        }
     }
 }
 
 @Composable
-fun ConfigOptionItem(title: String, onClick: () -> Unit) {
+fun ConfigOptionItem(title: String, onClick: () -> Unit, enabled: Boolean = true) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .clickable { onClick() },
+            .clickable(enabled = enabled) { onClick() },
         border = BorderStroke(1.dp, Color(0xFF6200EE)),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = Color.LightGray.copy(alpha = 0.1f))

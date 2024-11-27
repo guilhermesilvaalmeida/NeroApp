@@ -4,6 +4,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AppShortcut
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MoneyOff
@@ -17,6 +18,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,22 +43,33 @@ fun ClientMenuScreen(navController: NavController, clientName: String) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Bem-vindo, $clientName!", fontSize = 24.sp, color = primaryColor)
+            Text("Bem-vindo!", fontSize = 24.sp, color = primaryColor)
 
             Spacer(modifier = Modifier.height(32.dp))
 
             // Menu de opções
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                MenuItem(text = "Minhas Ordens", icon = Icons.Default.List) {
-                    // Navegar para a tela de ordens do cliente
+            )
+            {
+                MenuItem(text = "Serviços", icon = Icons.Default.AppShortcut) {
+                    // Navegar para a tela de Status dos Orçamentos (BudgetStatusScreen)
+                    navController.navigate("services")
                 }
+
+                MenuItem(text = "Minhas Ordens", icon = Icons.Default.List) {
+                    // Navegar para a tela de Status dos Orçamentos (BudgetStatusScreen)
+                    navController.navigate("budgetStatus")
+                }
+
                 MenuItem(text = "Minha Conta", icon = Icons.Default.Build) {
-                    // Navegar para a tela de configurações da conta
+                    // Navegar para a tela de configurações
+                    navController.navigate("settings")
                 }
                 MenuItem(text = "Sair", icon = Icons.Default.MoneyOff) {
                     // Realizar o logout e voltar para a tela de login
+                    FirebaseAuth.getInstance().signOut()
+                    navController.navigate("signIn")
                 }
             }
         }

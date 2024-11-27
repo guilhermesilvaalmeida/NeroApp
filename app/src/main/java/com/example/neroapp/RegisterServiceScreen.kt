@@ -13,16 +13,24 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterServiceScreen() {
+fun RegisterServiceScreen(navController: NavController) {
     val primaryColor = Color(0xFF6200EE)
     val borderColor = Color(0xFF6200EE) // Cor roxa para a borda
     var serviceName by remember { mutableStateOf(TextFieldValue("")) }
     var servicePrice by remember { mutableStateOf(TextFieldValue("")) }
     var serviceDescription by remember { mutableStateOf(TextFieldValue("")) }
     var message by remember { mutableStateOf<String?>(null) }
+
+    // Obter o usuário logado
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val db = FirebaseFirestore.getInstance()
 
     Scaffold(
         topBar = {
@@ -50,8 +58,7 @@ fun RegisterServiceScreen() {
                 label = { Text("Digite o nome do serviço") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(BorderStroke(2.dp, borderColor), RoundedCornerShape(8.dp))
-                    .padding(8.dp),
+                    .border(BorderStroke(2.dp, borderColor), RoundedCornerShape(8.dp)),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,
@@ -68,8 +75,7 @@ fun RegisterServiceScreen() {
                 label = { Text("Digite o preço por hora") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(BorderStroke(2.dp, borderColor), RoundedCornerShape(8.dp))
-                    .padding(8.dp),
+                    .border(BorderStroke(2.dp, borderColor), RoundedCornerShape(8.dp)),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,
@@ -87,8 +93,7 @@ fun RegisterServiceScreen() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(100.dp)
-                    .border(BorderStroke(2.dp, borderColor), RoundedCornerShape(8.dp))
-                    .padding(8.dp),
+                    .border(BorderStroke(2.dp, borderColor), RoundedCornerShape(8.dp)),
                 maxLines = 3,
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
@@ -101,7 +106,43 @@ fun RegisterServiceScreen() {
             // Botão de Salvar
             Button(
                 onClick = {
-                    message = "Serviço '${serviceName.text}' cadastrado com sucesso!"
+                    // Validação de campos
+                    if (serviceName.text.isBlank() || servicePrice.text.isBlank() || serviceDescription.text.isBlank()) {
+                        message = "Todos os campos devem ser preenchidos."
+                        return@Button
+                    }
+
+                    // Validar preço como número
+                    val price = servicePrice.text.toDoubleOrNull()
+                    if (price == null || price <= 0) {
+                        message = "O preço deve ser um número válido maior que zero."
+                        return@Button
+                    }
+
+                    // Validar se o usuário está logado
+                    if (currentUser != null) {
+                        val serviceData = hashMapOf(
+                            "name" to serviceName.text,
+                            "price" to price,
+                            "description" to serviceDescription.text,
+                            "userId" to currentUser.uid // Adicionando o ID do usuário logado
+                        )
+
+                        // Salvar no Firestore
+                        db.collection("servicos")
+                            .add(serviceData)
+                            .addOnSuccessListener {
+                                message = "Serviço '${serviceName.text}' cadastrado com sucesso!"
+                                serviceName = TextFieldValue("")
+                                servicePrice = TextFieldValue("")
+                                serviceDescription = TextFieldValue("")
+                            }
+                            .addOnFailureListener { e ->
+                                message = "Erro ao cadastrar serviço: ${e.localizedMessage}"
+                            }
+                    } else {
+                        message = "Erro: Nenhum usuário logado."
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -112,10 +153,13 @@ fun RegisterServiceScreen() {
                 Text("Salvar Serviço", color = Color.White, fontSize = 16.sp)
             }
 
-            // Mensagem de confirmação
+            // Mensagem de confirmação ou erro
             message?.let {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(text = it, color = primaryColor, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = it,
+                    color = if (it.contains("sucesso")) Color.Green else Color.Red,
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
         }
     }
@@ -124,5 +168,6 @@ fun RegisterServiceScreen() {
 @Preview(showBackground = true)
 @Composable
 fun PreviewRegisterServiceScreen() {
-    RegisterServiceScreen()
+    val fakeNavController = rememberNavController()
+    RegisterServiceScreen(navController = fakeNavController)
 }

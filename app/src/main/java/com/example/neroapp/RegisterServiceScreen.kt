@@ -58,8 +58,7 @@ fun RegisterServiceScreen(navController: NavController) {
                 label = { Text("Digite o nome do serviço") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(BorderStroke(2.dp, borderColor), RoundedCornerShape(8.dp))
-                    .padding(8.dp),
+                    .border(BorderStroke(2.dp, borderColor), RoundedCornerShape(8.dp)),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,
@@ -76,8 +75,7 @@ fun RegisterServiceScreen(navController: NavController) {
                 label = { Text("Digite o preço por hora") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(BorderStroke(2.dp, borderColor), RoundedCornerShape(8.dp))
-                    .padding(8.dp),
+                    .border(BorderStroke(2.dp, borderColor), RoundedCornerShape(8.dp)),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,
@@ -95,8 +93,7 @@ fun RegisterServiceScreen(navController: NavController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(100.dp)
-                    .border(BorderStroke(2.dp, borderColor), RoundedCornerShape(8.dp))
-                    .padding(8.dp),
+                    .border(BorderStroke(2.dp, borderColor), RoundedCornerShape(8.dp)),
                 maxLines = 3,
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
@@ -109,13 +106,26 @@ fun RegisterServiceScreen(navController: NavController) {
             // Botão de Salvar
             Button(
                 onClick = {
+                    // Validação de campos
+                    if (serviceName.text.isBlank() || servicePrice.text.isBlank() || serviceDescription.text.isBlank()) {
+                        message = "Todos os campos devem ser preenchidos."
+                        return@Button
+                    }
+
+                    // Validar preço como número
+                    val price = servicePrice.text.toDoubleOrNull()
+                    if (price == null || price <= 0) {
+                        message = "O preço deve ser um número válido maior que zero."
+                        return@Button
+                    }
+
                     // Validar se o usuário está logado
                     if (currentUser != null) {
                         val serviceData = hashMapOf(
                             "name" to serviceName.text,
-                            "price" to servicePrice.text,
+                            "price" to price,
                             "description" to serviceDescription.text,
-                            "userId" to currentUser.uid  // Adicionando o ID do usuário logado
+                            "userId" to currentUser.uid // Adicionando o ID do usuário logado
                         )
 
                         // Salvar no Firestore
@@ -123,9 +133,12 @@ fun RegisterServiceScreen(navController: NavController) {
                             .add(serviceData)
                             .addOnSuccessListener {
                                 message = "Serviço '${serviceName.text}' cadastrado com sucesso!"
+                                serviceName = TextFieldValue("")
+                                servicePrice = TextFieldValue("")
+                                serviceDescription = TextFieldValue("")
                             }
                             .addOnFailureListener { e ->
-                                message = "Erro ao cadastrar serviço: $e"
+                                message = "Erro ao cadastrar serviço: ${e.localizedMessage}"
                             }
                     } else {
                         message = "Erro: Nenhum usuário logado."
@@ -140,10 +153,13 @@ fun RegisterServiceScreen(navController: NavController) {
                 Text("Salvar Serviço", color = Color.White, fontSize = 16.sp)
             }
 
-            // Mensagem de confirmação
+            // Mensagem de confirmação ou erro
             message?.let {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(text = it, color = primaryColor, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = it,
+                    color = if (it.contains("sucesso")) Color.Green else Color.Red,
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
         }
     }

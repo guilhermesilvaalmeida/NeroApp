@@ -13,6 +13,8 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,6 +25,10 @@ fun RegisterServiceScreen() {
     var servicePrice by remember { mutableStateOf(TextFieldValue("")) }
     var serviceDescription by remember { mutableStateOf(TextFieldValue("")) }
     var message by remember { mutableStateOf<String?>(null) }
+
+    // Obter o usuário logado
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val db = FirebaseFirestore.getInstance()
 
     Scaffold(
         topBar = {
@@ -101,7 +107,27 @@ fun RegisterServiceScreen() {
             // Botão de Salvar
             Button(
                 onClick = {
-                    message = "Serviço '${serviceName.text}' cadastrado com sucesso!"
+                    // Validar se o usuário está logado
+                    if (currentUser != null) {
+                        val serviceData = hashMapOf(
+                            "name" to serviceName.text,
+                            "price" to servicePrice.text,
+                            "description" to serviceDescription.text,
+                            "userId" to currentUser.uid  // Adicionando o ID do usuário logado
+                        )
+
+                        // Salvar no Firestore
+                        db.collection("servicos")
+                            .add(serviceData)
+                            .addOnSuccessListener {
+                                message = "Serviço '${serviceName.text}' cadastrado com sucesso!"
+                            }
+                            .addOnFailureListener { e ->
+                                message = "Erro ao cadastrar serviço: $e"
+                            }
+                    } else {
+                        message = "Erro: Nenhum usuário logado."
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()

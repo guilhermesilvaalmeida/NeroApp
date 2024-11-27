@@ -52,11 +52,11 @@ fun CompanyMenuScreen(navController: NavController, companyName: String) {
             // Opções da empresa
             Column {
                 CompanyMenuOption("Cadastrar Serviço", "Registre um novo serviço oferecido pela sua empresa.", Icons.Filled.Build) {
-                    // Navegar para a tela de cadastrar serviço
+                    navController.navigate("registerService")
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 CompanyMenuOption("Visualizar Serviços", "Veja todos os serviços cadastrados.", Icons.Filled.Visibility) {
-                    // Navegar para a tela de visualizar serviços
+                    navController.navigate("visualizarServicos")
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 CompanyMenuOption("Clientes", "Gerencie seus clientes.", Icons.Filled.People) {
@@ -64,8 +64,7 @@ fun CompanyMenuScreen(navController: NavController, companyName: String) {
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 CompanyMenuOption("Visualizar Pedidos de Orçamentos", "Veja todos os pedidos de orçamentos recebidos.", Icons.Filled.RequestQuote) {
-                    // Navegar para a tela de visualizar pedidos de orçamentos
-                    navController.navigate("sent_quotes") // Navegação para a tela de orçamentos enviados
+                    navController.navigate("orcamentos")
                 }
             }
 

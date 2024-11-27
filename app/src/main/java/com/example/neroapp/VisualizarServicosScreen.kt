@@ -17,37 +17,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
 
 // Data class to represent a service
-data class Service(var title: String, var description: String, var id: String)
+data class Service(var title: String, var description: String)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun VisualizarServicosScreen(navController: NavController) {
-    val db = FirebaseFirestore.getInstance()
-    val currentUser = FirebaseAuth.getInstance().currentUser
-    var serviceList by remember { mutableStateOf<List<Service>>(emptyList()) }
+fun VisualizarServicosScreen(navController: NavController, services: List<Service>) {
+    var serviceList by remember { mutableStateOf(services.toMutableList()) }
     var showDialog by remember { mutableStateOf(false) }
     var selectedService by remember { mutableStateOf<Service?>(null) }
-
-    // Fetch services from Firestore
-    LaunchedEffect(Unit) {
-        if (currentUser != null) {
-            val servicesSnapshot = db.collection("servicos")
-                .whereEqualTo("userId", currentUser.uid) // Filtra serviços pelo ID do usuário
-                .get()
-                .await()
-
-            serviceList = servicesSnapshot.documents.mapNotNull { document ->
-                document.toObject(Service::class.java)?.apply {
-                    id = document.id
-                }
-            }
-        }
-    }
 
     Scaffold(
         topBar = {
@@ -93,20 +72,8 @@ fun VisualizarServicosScreen(navController: NavController) {
                 service = selectedService!!,
                 onDismiss = { showDialog = false },
                 onUpdate = { updatedService ->
-                    // Atualiza o serviço no Firestore
-                    db.collection("servicos")
-                        .document(updatedService.id)
-                        .set(updatedService)
-                        .addOnSuccessListener {
-                            // Atualiza a lista local
-                            serviceList = serviceList.map {
-                                if (it.id == updatedService.id) updatedService else it
-                            }
-                            showDialog = false
-                        }
-                        .addOnFailureListener {
-                            // Lidar com falha no update
-                        }
+                    serviceList[serviceList.indexOf(selectedService)] = updatedService
+                    showDialog = false
                 }
             )
         }
@@ -198,10 +165,9 @@ fun PreviewVisualizarServicosScreen() {
 
     // Adicionando os serviços de exemplo
     val sampleServices = listOf(
-        Service("Desenvolvimento Mobile", "A partir de R$ 2.000", "1"),
-        Service("Desenvolvimento Web", "A partir de R$ 1.500", "2"),
-        Service("Desenvolvimento de Software", "A partir de R$ 5.000", "3")
+        Service("Desenvolvimento Mobile", "A partir de R$ 2.000"),
+        Service("Desenvolvimento Web", "A partir de R$ 1.500"),
+        Service("Desenvolvimento de Software", "A partir de R$ 5.000")
     )
-
-    VisualizarServicosScreen(navController = fakeNavController)
+    VisualizarServicosScreen(navController = fakeNavController, services = sampleServices)
 }

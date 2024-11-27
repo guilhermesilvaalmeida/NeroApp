@@ -12,10 +12,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SentQuotesScreen() {
+fun SentQuotesScreen(navController: NavController) {
     val primaryColor = Color(0xFF6200EE)
     val backgroundColor = Color.White
 
@@ -150,5 +152,6 @@ data class Quote(
 @Preview(showBackground = true)
 @Composable
 fun PreviewSentQuotesScreen() {
-    SentQuotesScreen()
+    val fakeNavController = rememberNavController()
+    SentQuotesScreen(navController = fakeNavController)
 }

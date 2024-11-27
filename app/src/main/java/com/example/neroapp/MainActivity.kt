@@ -85,6 +85,21 @@ class MainActivity : ComponentActivity() {
                 composable("settings") {
                     SettingsScreen(navController = navController)
                 }
+                composable("budgetStatus") {
+                    BudgetStatusScreen(navController = navController)
+                }
+                composable("services") {
+                    ServicesScreen(navController = navController)
+                }
+                composable("registerService") {
+                    RegisterServiceScreen(navController = navController)
+                }
+                composable("visualizarServicos") {
+                    VisualizarServicosScreen(navController = navController)
+                }
+                composable("orcamentos") {
+                    SentQuotesScreen(navController = navController)
+                }
             }
         }
     }

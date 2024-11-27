@@ -4,6 +4,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AppShortcut
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MoneyOff
@@ -49,11 +50,18 @@ fun ClientMenuScreen(navController: NavController, clientName: String) {
             // Menu de opções
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                MenuItem(text = "Minhas Ordens", icon = Icons.Default.List) {
-                    // Navegar para a tela de Minhas Ordens
-                    navController.navigate("clientManagement")
+            )
+            {
+                MenuItem(text = "Serviços", icon = Icons.Default.AppShortcut) {
+                    // Navegar para a tela de Status dos Orçamentos (BudgetStatusScreen)
+                    navController.navigate("services")
                 }
+
+                MenuItem(text = "Minhas Ordens", icon = Icons.Default.List) {
+                    // Navegar para a tela de Status dos Orçamentos (BudgetStatusScreen)
+                    navController.navigate("budgetStatus")
+                }
+
                 MenuItem(text = "Minha Conta", icon = Icons.Default.Build) {
                     // Navegar para a tela de configurações
                     navController.navigate("settings")

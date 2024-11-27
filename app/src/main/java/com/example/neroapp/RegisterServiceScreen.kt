@@ -13,12 +13,14 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterServiceScreen() {
+fun RegisterServiceScreen(navController: NavController) {
     val primaryColor = Color(0xFF6200EE)
     val borderColor = Color(0xFF6200EE) // Cor roxa para a borda
     var serviceName by remember { mutableStateOf(TextFieldValue("")) }
@@ -150,5 +152,6 @@ fun RegisterServiceScreen() {
 @Preview(showBackground = true)
 @Composable
 fun PreviewRegisterServiceScreen() {
-    RegisterServiceScreen()
+    val fakeNavController = rememberNavController()
+    RegisterServiceScreen(navController = fakeNavController)
 }

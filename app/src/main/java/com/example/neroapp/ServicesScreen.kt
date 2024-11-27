@@ -13,45 +13,25 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ServicesScreen() {
-    val db = FirebaseFirestore.getInstance()
-    val currentUser = FirebaseAuth.getInstance().currentUser
-    var services by remember { mutableStateOf<List<OfferedService>>(emptyList()) }
+fun ServicesScreen(navController: NavController) {
+    val primaryColor = Color(0xFF6200EE)
+    val backgroundColor = Color.White
     var showDialog by remember { mutableStateOf(false) }
     var selectedService by remember { mutableStateOf("") }
-    var hourlyRate by remember { mutableStateOf(0) }
-    var hours by remember { mutableStateOf("") }
-
-    // Fetch services from Firestore
-    LaunchedEffect(Unit) {
-        if (currentUser != null) {
-            val servicesSnapshot = db.collection("servicos")
-                .whereEqualTo("userId", currentUser.uid) // Filtra os serviços pelo ID do usuário
-                .get()
-                .await()
-
-            services = servicesSnapshot.documents.mapNotNull { document ->
-                document.toObject(OfferedService::class.java)?.apply {
-                    id = document.id
-                }
-            }
-        }
-    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Serviços Oferecidos", color = Color.White) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF6200EE))
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = primaryColor)
             )
         },
-        containerColor = Color.White
+        containerColor = backgroundColor
     ) { paddingValues ->
 
         Column(
@@ -62,19 +42,24 @@ fun ServicesScreen() {
             verticalArrangement = Arrangement.spacedBy(24.dp),
             horizontalAlignment = Alignment.Start
         ) {
-            // Mostrar serviços filtrados
-            services.forEach { service ->
-                ServiceItem(
-                    serviceName = service.title,
-                    price = "A partir de R$ ${service.price}",
-                    hourlyRate = service.hourlyRate,
-                    onRequestQuote = {
-                        selectedService = service.title
-                        hourlyRate = service.hourlyRate
-                        showDialog = true
-                    }
-                )
-            }
+            ServiceItem(
+                serviceName = "Desenvolvimento Mobile",
+                price = "A partir de R$ 2.000",
+                hourlyRate = 100,
+                onRequestQuote = { selectedService = "Desenvolvimento Mobile"; showDialog = true }
+            )
+            ServiceItem(
+                serviceName = "Desenvolvimento Web",
+                price = "A partir de R$ 1.500",
+                hourlyRate = 80,
+                onRequestQuote = { selectedService = "Desenvolvimento Web"; showDialog = true }
+            )
+            ServiceItem(
+                serviceName = "Desenvolvimento de Software",
+                price = "A partir de R$ 5.000",
+                hourlyRate = 120,
+                onRequestQuote = { selectedService = "Desenvolvimento de Software"; showDialog = true }
+            )
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -86,33 +71,16 @@ fun ServicesScreen() {
             )
         }
 
-        // Exibe o Dialog de Solicitação de Orçamento
         if (showDialog) {
             RequestQuoteDialog(
                 serviceName = selectedService,
-                hourlyRate = hourlyRate,
-                onDismiss = { showDialog = false },
-                onRequestQuote = { requestedHours ->
-                    // Envia o pedido de orçamento para o Firestore
-                    if (currentUser != null) {
-                        val quoteData = mapOf(
-                            "serviceName" to selectedService,
-                            "userId" to currentUser.uid,
-                            "hourlyRate" to hourlyRate,
-                            "hours" to requestedHours,
-                            "totalPrice" to (requestedHours.toIntOrNull() ?: 0) * hourlyRate,
-                            "status" to "Pendente"
-                        )
-                        db.collection("orcamentos").add(quoteData)
-                            .addOnSuccessListener {
-                                showDialog = false
-                                // Aqui você pode adicionar feedback visual ou mensagem de sucesso
-                            }
-                            .addOnFailureListener {
-                                // Lidar com falha ao salvar o orçamento
-                            }
-                    }
-                }
+                hourlyRate = when (selectedService) {
+                    "Desenvolvimento Mobile" -> 100
+                    "Desenvolvimento Web" -> 80
+                    "Desenvolvimento de Software" -> 120
+                    else -> 0
+                },
+                onDismiss = { showDialog = false }
             )
         }
     }
@@ -154,7 +122,7 @@ fun ServiceItem(serviceName: String, price: String, hourlyRate: Int, onRequestQu
 }
 
 @Composable
-fun RequestQuoteDialog(serviceName: String, hourlyRate: Int, onDismiss: () -> Unit, onRequestQuote: (String) -> Unit) {
+fun RequestQuoteDialog(serviceName: String, hourlyRate: Int, onDismiss: () -> Unit) {
     var hours by remember { mutableStateOf("") }
     val totalPrice = (hours.toIntOrNull() ?: 0) * hourlyRate
 
@@ -176,9 +144,7 @@ fun RequestQuoteDialog(serviceName: String, hourlyRate: Int, onDismiss: () -> Un
             }
         },
         confirmButton = {
-            TextButton(onClick = {
-                onRequestQuote(hours)
-            }) {
+            TextButton(onClick = onDismiss) {
                 Text("Enviar Orçamento")
             }
         },
@@ -193,12 +159,6 @@ fun RequestQuoteDialog(serviceName: String, hourlyRate: Int, onDismiss: () -> Un
 @Preview(showBackground = true)
 @Composable
 fun PreviewServicesScreen() {
-    ServicesScreen()
+    val fakeNavController = rememberNavController()
+    ServicesScreen(navController = fakeNavController)
 }
-
-data class OfferedService(
-    val title: String = "",
-    val price: String = "",
-    val hourlyRate: Int = 0,
-    var id: String = ""
-)

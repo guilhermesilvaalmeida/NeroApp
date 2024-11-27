@@ -38,6 +38,7 @@ class MainActivity : ComponentActivity() {
                                         val companyName = "Nome da Empresa" // Pode ser substituído por dados reais
                                         navController.navigate("companyMenu/$companyName")
                                     } else {
+                                        // Supondo que o nome do cliente esteja salvo no banco de dados
                                         val clientName = "Nome do Cliente" // Pode ser substituído por dados reais
                                         navController.navigate("clientMenu/$clientName")
                                     }

@@ -18,16 +18,15 @@ import kotlinx.coroutines.tasks.await
 fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var cpf by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
     var birthDate by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
-    var userType by remember { mutableStateOf("Cliente") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isCompany by remember { mutableStateOf(false) }  // Estado para determinar o tipo de cadastro
+
     val coroutineScope = rememberCoroutineScope()
+    val db = FirebaseFirestore.getInstance()
 
-    val db = FirebaseFirestore.getInstance() // Instância do Firestore
-
-    // Definindo cores
     val primaryColor = Color(0xFF6200EE)
     val backgroundColor = Color.White
 
@@ -57,6 +56,23 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Campo para Nome
+            TextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Nome") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = primaryColor,
+                    cursorColor = primaryColor,
+                    unfocusedIndicatorColor = Color.Gray,
+                    focusedLabelColor = primaryColor,
+                    unfocusedLabelColor = Color.Gray
+                )
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             // Campo para Email
             TextField(
                 value = email,
@@ -81,23 +97,6 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
                 label = { Text("Senha") },
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(),
-                colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = primaryColor,
-                    cursorColor = primaryColor,
-                    unfocusedIndicatorColor = Color.Gray,
-                    focusedLabelColor = primaryColor,
-                    unfocusedLabelColor = Color.Gray
-                )
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Campo para CPF
-            TextField(
-                value = cpf,
-                onValueChange = { cpf = it },
-                label = { Text("CPF") },
-                modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = primaryColor,
                     cursorColor = primaryColor,
@@ -144,25 +143,20 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
 
             // Escolha entre Cliente ou Empresa
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Button(
-                    onClick = { userType = "Cliente" },
-                    colors = ButtonDefaults.buttonColors(containerColor = if (userType == "Cliente") primaryColor else Color.Gray),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Cliente", color = Color.White)
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(
-                    onClick = { userType = "Empresa" },
-                    colors = ButtonDefaults.buttonColors(containerColor = if (userType == "Empresa") primaryColor else Color.Gray),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Empresa", color = Color.White)
-                }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(
+                    selected = !isCompany,
+                    onClick = { isCompany = false }
+                )
+                Text("Cliente", modifier = Modifier.padding(start = 8.dp))
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                RadioButton(
+                    selected = isCompany,
+                    onClick = { isCompany = true }
+                )
+                Text("Empresa", modifier = Modifier.padding(start = 8.dp))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -179,18 +173,25 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
                             val user = authResult.user
                             user?.let {
                                 val userData = hashMapOf(
-                                    "cpf" to cpf,
-                                    "birthDate" to birthDate,
-                                    "phone" to phone,
-                                    "userType" to userType
+                                    "nome" to name,
+                                    "telefone" to phone,
+                                    "dataNascimento" to birthDate,
+                                    "email" to email
                                 )
 
-                                db.collection("users").document(it.uid)
-                                    .set(userData)
-                                    .await()
+                                // Inserção dos dados na coleção adequada (clientes ou empresas)
+                                if (isCompany) {
+                                    db.collection("empresas").document(it.uid)
+                                        .set(userData)
+                                        .await()
+                                } else {
+                                    db.collection("clientes").document(it.uid)
+                                        .set(userData)
+                                        .await()
+                                }
 
                                 // Navegação para a tela de login ou página principal
-                                onNavigateToSignIn() // Aqui você pode navegar para a tela de login
+                                onNavigateToSignIn() // Navega para a tela de login
                             }
 
                         } catch (e: Exception) {

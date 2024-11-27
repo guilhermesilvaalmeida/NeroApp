@@ -20,7 +20,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -31,16 +30,14 @@ import com.google.firebase.auth.FirebaseAuth
 fun SignInScreen(
     auth: FirebaseAuth,
     onNavigateToSignUp: () -> Unit,
-    onNavigateToClientHome: () -> Unit,
-    onNavigateToCompanyHome: () -> Unit,
-    navController: NavController // Adicionando o navController como parâmetro
+    onNavigateToClientHome: () -> Unit, // Mantido apenas a navegação para cliente
+    navController: NavController
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var userType by remember { mutableStateOf("") }
     var rememberMe by remember { mutableStateOf(false) }
-    var isPasswordVisible by remember { mutableStateOf(false) } // Estado para visibilidade da senha
+    var isPasswordVisible by remember { mutableStateOf(false) }
 
     val primaryColor = Color(0xFF6200EE)
     val backgroundColor = Color.White
@@ -54,7 +51,6 @@ fun SignInScreen(
         },
         containerColor = backgroundColor
     ) { paddingValues ->
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -143,13 +139,8 @@ fun SignInScreen(
                     auth.signInWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
-                                if (userType == "Cliente") {
-                                    // Navegação para a tela de ClientMenuScreen
-                                    navController.navigate("clientMenu") // Direciona para a tela de ClientMenuScreen
-                                } else {
-                                    // Navegação para a tela da empresa
-                                    navController.navigate("companyMenu")
-                                }
+                                // Navegar para o "clientMenu" após login
+                                navController.navigate("clientMenu")
                             } else {
                                 errorMessage = task.exception?.message ?: "Erro ao fazer login"
                             }
@@ -170,7 +161,6 @@ fun SignInScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Texto de "Esqueci minha senha"
             TextButton(onClick = { navController.navigate("recoverPassword") }) {
                 Text("Esqueci minha senha", color = primaryColor)
             }
@@ -183,5 +173,4 @@ fun SignInScreen(
         }
     }
 }
-
 

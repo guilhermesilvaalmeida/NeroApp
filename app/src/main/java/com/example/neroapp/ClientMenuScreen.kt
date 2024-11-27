@@ -4,10 +4,9 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.MoneyOff // Ícone alternativo para orçamentos
+import androidx.compose.material.icons.filled.MoneyOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,7 +17,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,79 +38,42 @@ fun ClientMenuScreen(navController: NavController, clientName: String) {
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Text("Bem-vindo, $clientName!", fontSize = 24.sp, color = primaryColor)
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Menu de opções
             Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text("Olá $clientName, o que vamos fazer hoje?", style = MaterialTheme.typography.headlineMedium)
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Opções do cliente
-                Column {
-                    MenuOption("Serviços Oferecidos", "Veja todos os serviços disponíveis.", Icons.Filled.Build) {
-                        // Navegar para a tela de serviços oferecidos
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    MenuOption("Ordens de Serviço", "Acompanhe o status de suas ordens.",
-                        Icons.AutoMirrored.Filled.List
-                    ) {
-                        // Navegar para a tela de ordens de serviço
-                    }
-                    Spacer(modifier = Modifier.height(16.dp)) // Espaço entre opções
-                    MenuOption("Status dos Orçamentos", "Verifique o status dos seus orçamentos.", Icons.Filled.MoneyOff) {
-                        // Navegar para a tela de status dos orçamentos
-                    }
+                MenuItem(text = "Minhas Ordens", icon = Icons.Default.List) {
+                    // Navegar para a tela de ordens do cliente
+                }
+                MenuItem(text = "Minha Conta", icon = Icons.Default.Build) {
+                    // Navegar para a tela de configurações da conta
+                }
+                MenuItem(text = "Sair", icon = Icons.Default.MoneyOff) {
+                    // Realizar o logout e voltar para a tela de login
                 }
             }
-
-            // Texto na parte inferior
-            Text(
-                text = "Desenvolvido by: Enzo e Guilherme",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray,
-                modifier = Modifier.padding(16.dp)
-            )
         }
     }
 }
 
 @Composable
-fun MenuOption(title: String, description: String, icon: ImageVector, onClick: () -> Unit) {
-    Card(
+fun MenuItem(text: String, icon: ImageVector, onClick: () -> Unit) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(8.dp),
-        border = BorderStroke(2.dp, Color(0xFF6200EE)), // Borda roxa
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(icon, contentDescription = null, tint = Color(0xFF6200EE), modifier = Modifier.size(32.dp)) // Ícone maior
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(title, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp)) // Texto maior
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(description, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp), color = Color.Gray) // Descrição
-        }
+        Icon(icon, contentDescription = null, tint = Color.Gray)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text, fontSize = 18.sp)
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewClientMenuScreen() {
-    val fakeNavController = rememberNavController()
-    ClientMenuScreen(navController = fakeNavController, clientName = "Cliente XYZ")
 }

@@ -22,7 +22,8 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
     var birthDate by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var isCompany by remember { mutableStateOf(false) }  // Estado para determinar o tipo de cadastro
+    var successMessage by remember { mutableStateOf<String?>(null) }
+    var isCompany by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
     val db = FirebaseFirestore.getInstance()
@@ -56,7 +57,7 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Campo para Nome
+            // Campos de entrada
             TextField(
                 value = name,
                 onValueChange = { name = it },
@@ -73,7 +74,6 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Campo para Email
             TextField(
                 value = email,
                 onValueChange = { email = it },
@@ -90,7 +90,6 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Campo para Senha
             TextField(
                 value = password,
                 onValueChange = { password = it },
@@ -108,7 +107,6 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Campo para Data de Nascimento
             TextField(
                 value = birthDate,
                 onValueChange = { birthDate = it },
@@ -125,7 +123,6 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Campo para Telefone
             TextField(
                 value = phone,
                 onValueChange = { phone = it },
@@ -142,7 +139,6 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Escolha entre Cliente ou Empresa
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(
                     selected = !isCompany,
@@ -161,15 +157,14 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botão para cadastrar
             Button(
                 onClick = {
                     coroutineScope.launch {
                         try {
-                            // Criação do usuário no Firebase Authentication
+                            // Criação do usuário
                             val authResult = auth.createUserWithEmailAndPassword(email, password).await()
 
-                            // Adiciona os dados adicionais ao Firestore
+                            // Dados no Firestore
                             val user = authResult.user
                             user?.let {
                                 val userData = hashMapOf(
@@ -179,23 +174,33 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
                                     "email" to email
                                 )
 
-                                // Inserção dos dados na coleção adequada (clientes ou empresas)
                                 if (isCompany) {
                                     db.collection("empresas").document(it.uid)
-                                        .set(userData)
-                                        .await()
+                                        .set(userData).await()
                                 } else {
                                     db.collection("clientes").document(it.uid)
-                                        .set(userData)
-                                        .await()
+                                        .set(userData).await()
                                 }
 
-                                // Navegação para a tela de login ou página principal
-                                onNavigateToSignIn() // Navega para a tela de login
+                                // Mensagem de sucesso
+                                successMessage = "Usuário cadastrado com sucesso!"
+                                errorMessage = null
+
+                                // Limpar os campos
+                                email = ""
+                                password = ""
+                                name = ""
+                                birthDate = ""
+                                phone = ""
                             }
 
                         } catch (e: Exception) {
-                            errorMessage = "Erro ao cadastrar: ${e.message}"
+                            errorMessage = if (e.message?.contains("The email address is already in use") == true) {
+                                "Este email já está em uso. Por favor, use outro."
+                            } else {
+                                "Erro ao cadastrar: ${e.message}"
+                            }
+                            successMessage = null
                         }
                     }
                 },
@@ -211,7 +216,15 @@ fun SignUpScreen(auth: FirebaseAuth, onNavigateToSignIn: () -> Unit) {
                 Text("Já tem uma conta? Faça login", color = primaryColor)
             }
 
-            // Exibe a mensagem de erro caso haja
+            successMessage?.let {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = it,
+                    color = Color(0xFF00C853), // Cor de sucesso (verde)
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+
             errorMessage?.let {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(

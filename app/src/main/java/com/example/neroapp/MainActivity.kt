@@ -24,8 +24,9 @@ class MainActivity : ComponentActivity() {
                     SignInScreen(
                         auth = FirebaseAuth.getInstance(),
                         onNavigateToSignUp = { navController.navigate("signUp") },
-                        onNavigateToClientHome = { /* Navegação para a menu do cliente */ },
-                        onNavigateToCompanyHome = { /* Navegação para a menu da empresa */ }
+                        onNavigateToClientHome = { navController.navigate("clientMenu") }, // Navega para a tela ClientMenuScreen
+                        onNavigateToCompanyHome = { navController.navigate("companyMenu") }, // Navega para a tela CompanyMenuScreen
+                        navController = navController // Passando o navController para SignInScreen
                     )
                 }
                 composable("signUp") {
@@ -34,7 +35,17 @@ class MainActivity : ComponentActivity() {
                         onNavigateToSignIn = { navController.navigate("signIn") }
                     )
                 }
+                composable("recoverPassword") {
+                    RecoverPasswordScreen(navController = navController)
+                }
+//                composable("clientMenu") {
+//                    ClientMenuScreen(navController = navController) // Tela do Menu do Cliente
+//                }
+//                composable("companyMenu") {
+//                    CompanyMenuScreen(navController = navController) // Tela do Menu da Empresa
+//                }
             }
         }
     }
 }
+
